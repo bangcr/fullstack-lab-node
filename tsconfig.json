@@ -1,0 +1,35 @@
+{
+    // TypeScript 컴파일러 옵션 설정
+    "compilerOptions": {
+      // 컴파일된 JavaScript 파일이 저장될 디렉토리
+      "outDir": "./dist",
+      
+      // TypeScript 소스 파일이 위치한 루트 디렉토리
+      "rootDir": "./",
+      
+      // 컴파일될 JavaScript의 버전 설정 (ES6)
+      "target": "es6",
+      
+      // 모듈 시스템 설정 (Node.js의 기본 모듈 시스템)
+      "module": "commonjs",
+      
+      // 엄격한 타입 체크 활성화
+      "strict": true,
+      
+      // CommonJS 모듈을 ES6 모듈처럼 import 할 수 있게 함
+      "esModuleInterop": true,
+      
+      // 타입 정의 파일의 타입 체크를 건너뜀
+      "skipLibCheck": true,
+      
+      // 파일 이름의 대소문자 일관성 강제
+      "forceConsistentCasingInFileNames": true
+    },
+    "include": [
+      "*.ts"  // 루트 디렉토리의 모든 TypeScript 파일
+    ],
+    "exclude": [
+      "node_modules"  // node_modules 디렉토리 제외
+    ]
+  }
+  
