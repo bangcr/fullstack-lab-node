@@ -69,10 +69,12 @@ services:
       - /app/node_modules
       - /var/run/docker.sock:/var/run/docker.sock
       - ./.env:/app/.env:ro
-      - ${PROJECT_DIR}:${PROJECT_DIR}  # 프로젝트 디렉토리를 동일한 경로로 마운트
+      - ${PROJECT_DIR}:${PROJECT_DIR}
     environment:
       - WEBHOOK_SECRET=your-webhook-secret
-      - PROJECT_DIR=${PROJECT_DIR}  # 환경변수 전달
+      - PROJECT_DIR=${PROJECT_DIR}
+      - GIT_USER_EMAIL=${GIT_USER_EMAIL}
+      - GIT_USER_NAME=${GIT_USER_NAME}
     restart: always
     networks:
       - mynetwork
