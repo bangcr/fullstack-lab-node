@@ -1,12 +1,19 @@
 import express from 'express';
 import { exec } from 'child_process';
 import path from 'path';
+import dotenv from 'dotenv';
+
+// .env 파일 로드
+dotenv.config();
 
 const app = express();
 const port = 9000;
 
 // GitHub Webhook Secret (보안을 위해 환경변수로 관리하는 것을 권장)
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'your-webhook-secret';
+
+// 환경변수 확인용 로그
+console.log('프로젝트 디렉토리:', process.env.PROJECT_DIR);
 
 // JSON body 파싱
 app.use(express.json());
