@@ -2,12 +2,19 @@ import express from 'express';
 import { exec } from 'child_process';
 import path from 'path';
 import dotenv from 'dotenv';
+import { resolve } from 'path';
 
-// .env 파일 로드
-dotenv.config();
+// .env 파일 경로를 명시적으로 지정
+dotenv.config({ path: resolve(__dirname, '../.env') });
 
 const app = express();
 const port = 9000;
+
+// 환경변수가 없을 경우 에러 발생
+if (!process.env.PROJECT_DIR) {
+  console.error('❌ PROJECT_DIR 환경변수가 설정되지 않았습니다!');
+  process.exit(1);
+}
 
 // GitHub Webhook Secret (보안을 위해 환경변수로 관리하는 것을 권장)
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'your-webhook-secret';
@@ -37,10 +44,10 @@ app.post('/webhook', (req, res) => {
       : '/usr/local/bin/docker-compose';  // Linux/Mac
 
     // 프로젝트 디렉토리 (호스트 시스템의 경로)
-    const projectDir = process.env.PROJECT_DIR || '/c/Users/bangcr/Desktop/develop/personal/fullstack-lab-node';
+    const projectDir = process.env.PROJECT_DIR;
     
     // 업데이트 및 재배포 명령어 실행
-    const command = `cd "${projectDir}" && git pull origin main && "${dockerComposePath}" down && "${dockerComposePath}" up --build`; //추후 재배포 옵션 -d 추가
+    const command = `cd "${projectDir}" && git pull origin main && "${dockerComposePath}" down && "${dockerComposePath}" up --build`;
     
     console.log("실행할 명령어:", command);
 
