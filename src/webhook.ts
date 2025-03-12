@@ -72,7 +72,7 @@ app.post('/webhook', (req, res) => {
     });
     
     // 업데이트 및 재배포 명령어 실행
-    const command = `cd "${projectDir}" && git pull origin main && "${dockerComposePath}" down && "${dockerComposePath}" up --build`;
+    const command = `cd "${projectDir}" && git stash && git pull origin main && git stash pop && "${dockerComposePath}" down && "${dockerComposePath}" up --build`;
     
     console.log("실행할 명령어:", command);
 
