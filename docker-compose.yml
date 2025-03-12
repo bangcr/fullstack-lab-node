@@ -58,6 +58,21 @@ services:
       - mynetwork # 다른 서비스들과 통신하기 위한 네트워크 연결
     restart: always # 컨테이너 자동 재시작 설정
 
+  # Webhook 리스너 서비스
+  webhook:
+    build: .
+    command: npm run webhook
+    ports:
+      - "9000:9000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - WEBHOOK_SECRET=your-webhook-secret
+    restart: always
+    networks:
+      - mynetwork
+
 # Docker 네트워크 정의
 networks:
   mynetwork: # 서비스들 간의 통신을 위한 네트워크

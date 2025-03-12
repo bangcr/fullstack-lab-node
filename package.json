@@ -19,6 +19,8 @@
   "scripts": {
     "dev": "./node_modules/.bin/ts-node index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "webhook": "ts-node src/webhook.ts",
+    "webhook:dev": "nodemon src/webhook.ts"
   }
 }
