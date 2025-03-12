@@ -68,9 +68,11 @@ services:
       - .:/app
       - /app/node_modules
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./.env:/app/.env:ro  # .env 파일을 명시적으로 마운트
+      - ./.env:/app/.env:ro
+      - ${PROJECT_DIR}:${PROJECT_DIR}  # 프로젝트 디렉토리를 동일한 경로로 마운트
     environment:
       - WEBHOOK_SECRET=your-webhook-secret
+      - PROJECT_DIR=${PROJECT_DIR}  # 환경변수 전달
     restart: always
     networks:
       - mynetwork

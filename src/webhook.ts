@@ -3,6 +3,7 @@ import { exec } from 'child_process';
 import path from 'path';
 import dotenv from 'dotenv';
 import { resolve } from 'path';
+import fs from 'fs';
 
 // .env 파일 경로를 명시적으로 지정
 dotenv.config({ path: resolve(__dirname, '../.env') });
@@ -14,6 +15,21 @@ const port = 9000;
 if (!process.env.PROJECT_DIR) {
   console.error('❌ PROJECT_DIR 환경변수가 설정되지 않았습니다!');
   process.exit(1);
+}
+
+// 디버깅: 현재 작업 디렉토리와 환경변수 출력
+console.log('현재 작업 디렉토리:', process.cwd());
+console.log('프로젝트 디렉토리 환경변수:', process.env.PROJECT_DIR);
+
+// 디렉토리 존재 여부 확인
+try {
+  if (fs.existsSync(process.env.PROJECT_DIR)) {
+    console.log('✅ 프로젝트 디렉토리가 존재합니다.');
+  } else {
+    console.log('❌ 프로젝트 디렉토리를 찾을 수 없습니다.');
+  }
+} catch(err) {
+  console.error('디렉토리 확인 중 에러:', err);
 }
 
 // GitHub Webhook Secret (보안을 위해 환경변수로 관리하는 것을 권장)
@@ -45,6 +61,15 @@ app.post('/webhook', (req, res) => {
 
     // 프로젝트 디렉토리 (호스트 시스템의 경로)
     const projectDir = process.env.PROJECT_DIR;
+    
+    // 디버깅: 명령어 실행 전 디렉토리 확인
+    exec(`ls -la "${projectDir}"`, (error, stdout, stderr) => {
+      if (error) {
+        console.error('디렉토리 확인 실패:', error);
+      } else {
+        console.log('디렉토리 내용:', stdout);
+      }
+    });
     
     // 업데이트 및 재배포 명령어 실행
     const command = `cd "${projectDir}" && git pull origin main && "${dockerComposePath}" down && "${dockerComposePath}" up --build`;
