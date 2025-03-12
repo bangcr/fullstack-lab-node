@@ -24,18 +24,26 @@ app.post('/webhook', (req, res) => {
   if (req.body.ref === "refs/heads/main") {
     console.log("🚀 main 브랜치 변경 감지! 업데이트 진행...");
 
-    // 프로젝트 디렉토리로 이동
-    const projectDir = path.resolve(__dirname, '..');
+    // Docker Compose 실행 파일 경로
+    const dockerComposePath = process.platform === 'win32' 
+      ? 'docker-compose.exe'  // Windows
+      : '/usr/local/bin/docker-compose';  // Linux/Mac
+
+    // 프로젝트 디렉토리 (호스트 시스템의 경로)
+    const projectDir = process.env.PROJECT_DIR || '/c/Users/bangcr/Desktop/develop/personal/fullstack-lab-node';
     
     // 업데이트 및 재배포 명령어 실행
-    exec(`cd ${projectDir} && git pull origin main && docker-compose down && docker-compose up -d --build`, 
-      (error, stdout, stderr) => {
-        if (error) {
-          console.error(`❌ 업데이트 실패:`, error);
-          console.error(`stderr: ${stderr}`);
-        } else {
-          console.log("✅ 업데이트 완료:\n", stdout);
-        }
+    const command = `cd "${projectDir}" && git pull origin main && "${dockerComposePath}" down && "${dockerComposePath}" up --build`; //추후 재배포 옵션 -d 추가
+    
+    console.log("실행할 명령어:", command);
+
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`❌ 업데이트 실패:`, error);
+        console.error(`stderr: ${stderr}`);
+      } else {
+        console.log("✅ 업데이트 완료:\n", stdout);
+      }
     });
   }
 
