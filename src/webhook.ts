@@ -14,14 +14,15 @@ const port = 9000;
 // 명령어 실행 함수
 const executeCommand = (command: string): Promise<string> => {
   return new Promise((resolve, reject) => {
+    console.log(`실행할 명령어: ${command}`);
     exec(command, (error, stdout, stderr) => {
       if (error) {
-        console.error(`명령어 실행 실패: ${command}`);
-        console.error(`오류: ${error.message}`);
+        console.error(`❌ 명령어 실행 실패: ${command}`);
+        console.error(`오류 메시지: ${error.message}`);
         if (stderr) console.error(`표준 에러: ${stderr}`);
         reject(error);
       } else {
-        if (stdout) console.log(`실행 결과: ${stdout}`);
+        if (stdout) console.log(`✅ 실행 결과:\n${stdout}`);
         resolve(stdout);
       }
     });
@@ -78,7 +79,7 @@ app.post('/webhook', async (req, res) => {
       console.log('현재 디렉토리 내용 확인:');
       await executeCommand(`ls -la "${projectDir}"`);
 
-      // Git 저장소 상태 확인 및 초기화
+      // Git 저장소 상태 확인
       console.log('1. Git 저장소 상태 확인 중...');
       try {
         await executeCommand(`cd "${projectDir}" && git status`);
@@ -95,8 +96,12 @@ app.post('/webhook', async (req, res) => {
 
       // 현재 변경사항 저장
       console.log('3. 현재 변경사항 저장 중...');
-      await executeCommand(`cd "${projectDir}" && git add .`);
-      await executeCommand(`cd "${projectDir}" && git stash`);
+      try {
+        await executeCommand(`cd "${projectDir}" && git add .`);
+        await executeCommand(`cd "${projectDir}" && git stash`);
+      } catch (error) {
+        console.log('변경사항이 없거나 저장 실패:', error);
+      }
 
       // 원격 저장소에서 변경사항 가져오기
       console.log('4. 원격 저장소에서 변경사항 가져오는 중...');
@@ -105,7 +110,11 @@ app.post('/webhook', async (req, res) => {
 
       // 저장했던 변경사항 복원
       console.log('5. 저장했던 변경사항 복원 중...');
-      await executeCommand(`cd "${projectDir}" && git stash pop`);
+      try {
+        await executeCommand(`cd "${projectDir}" && git stash pop`);
+      } catch (error) {
+        console.log('저장된 변경사항이 없거나 복원 실패:', error);
+      }
 
       // Docker 컨테이너 중지
       console.log('6. Docker 컨테이너 중지 중...');
@@ -117,7 +126,11 @@ app.post('/webhook', async (req, res) => {
 
       console.log('✅ 업데이트 및 재배포 완료!');
     } catch (error) {
-      console.error('❌ 업데이트 실패:', error);
+      console.error('❌ 업데이트 실패:');
+      console.error('에러 타입:', error.constructor.name);
+      console.error('에러 메시지:', error.message);
+      if (error.stderr) console.error('표준 에러:', error.stderr);
+      if (error.stdout) console.error('표준 출력:', error.stdout);
     }
   }
 
