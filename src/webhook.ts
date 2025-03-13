@@ -55,7 +55,7 @@ app.post('/webhook', (req, res) => {
     console.log("🚀 main 브랜치 변경 감지! 업데이트 진행...");
 
     // Docker Compose 실행 파일 경로
-    const dockerComposePath = 'docker-compose';
+    const dockerComposePath = 'docker compose';  // docker compose v2 사용
 
     // 프로젝트 디렉토리 (호스트 시스템의 경로)
     const projectDir = process.env.PROJECT_DIR;
