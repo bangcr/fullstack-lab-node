@@ -92,9 +92,9 @@ app.post('/webhook', (req, res) => {
       'git stash',
       'git pull origin main',
       'git stash pop || true',  // 실패해도 계속 진행
-      `${dockerComposePath} down`,
+      `${dockerComposePath} down --remove-orphans`,
       // 컨테이너가 완전히 종료되었는지 확인
-      `${dockerComposePath} ps --format json | grep -q "[]" || (echo "컨테이너가 아직 실행 중입니다." && exit 1)`,
+      `${dockerComposePath} ps --services | wc -l | grep -q "^0$" || (echo "컨테이너가 아직 실행 중입니다." && exit 1)`,
       `${dockerComposePath} up --build`
     ];
 
