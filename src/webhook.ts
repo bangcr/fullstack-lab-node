@@ -116,8 +116,17 @@ app.post('/webhook', (req, res) => {
           console.log(`✅ 명령어 실행 성공:`, command);
           if (stdout) console.log('출력:', stdout);
         }
-        currentCommand++;
-        executeNextCommand();
+        
+        // docker-compose 명령어인 경우 추가 대기 시간 설정
+        if (command.includes('docker-compose')) {
+          setTimeout(() => {
+            currentCommand++;
+            executeNextCommand();
+          }, 5000); // 5초 대기
+        } else {
+          currentCommand++;
+          executeNextCommand();
+        }
       });
     };
 
