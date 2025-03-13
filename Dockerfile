@@ -8,6 +8,25 @@ FROM node:16
 # 이후의 모든 명령어는 이 디렉토리를 기준으로 실행됨
 WORKDIR /app
 
+# Docker CLI 및 docker-compose 설치
+RUN apt-get update && apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+# Docker의 공식 GPG 키 추가
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+# Docker 저장소 설정
+RUN echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
+    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Docker CLI 및 docker-compose 설치
+RUN apt-get update && apt-get install -y docker-ce-cli docker-compose-plugin
+
 # package.json과 package-lock.json (또는 yarn.lock) 파일을 복사
 # 종속성 설치를 위해 필요한 파일만 먼저 복사
 COPY package*.json ./
