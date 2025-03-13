@@ -55,9 +55,7 @@ app.post('/webhook', (req, res) => {
     console.log("🚀 main 브랜치 변경 감지! 업데이트 진행...");
 
     // Docker Compose 실행 파일 경로
-    const dockerComposePath = process.platform === 'win32' 
-      ? 'docker-compose.exe'  // Windows
-      : '/usr/local/bin/docker-compose';  // Linux/Mac
+    const dockerComposePath = 'docker-compose';  // Docker 컨테이너 내부에서는 직접 명령어 사용
 
     // 프로젝트 디렉토리 (호스트 시스템의 경로)
     const projectDir = process.env.PROJECT_DIR;
@@ -72,7 +70,7 @@ app.post('/webhook', (req, res) => {
     });
     
     // 업데이트 및 재배포 명령어 실행
-    const command = `cd "${projectDir}" && git config --global user.email "${process.env.GIT_USER_EMAIL}" && git config --global user.name "${process.env.GIT_USER_NAME}" && git stash && git pull origin main && git stash pop && "${dockerComposePath}" down && "${dockerComposePath}" up --build`;
+    const command = `cd "${projectDir}" && git config --global user.email "${process.env.GIT_USER_EMAIL}" && git config --global user.name "${process.env.GIT_USER_NAME}" && git stash && git pull origin main && git stash pop && ${dockerComposePath} down && ${dockerComposePath} up --build`;
     
     console.log("실행할 명령어:", command);
 
