@@ -55,12 +55,27 @@ app.post('/webhook', (req, res) => {
     console.log("🚀 main 브랜치 변경 감지! 업데이트 진행...");
 
     // Docker Compose 실행 파일 경로
-    const dockerComposePath = 'docker-compose';  // Docker 컨테이너 내부에서는 직접 명령어 사용
+    const dockerComposePath = 'docker-compose';
 
     // 프로젝트 디렉토리 (호스트 시스템의 경로)
     const projectDir = process.env.PROJECT_DIR;
     
-    // 디버깅: 명령어 실행 전 디렉토리 확인
+    // 환경 변수 확인
+    console.log('현재 환경 변수:');
+    console.log('PROJECT_DIR:', process.env.PROJECT_DIR);
+    console.log('GIT_USER_EMAIL:', process.env.GIT_USER_EMAIL);
+    console.log('GIT_USER_NAME:', process.env.GIT_USER_NAME);
+    
+    // 현재 작업 디렉토리 확인
+    exec('pwd', (error, stdout, stderr) => {
+      if (error) {
+        console.error('현재 디렉토리 확인 실패:', error);
+      } else {
+        console.log('현재 작업 디렉토리:', stdout);
+      }
+    });
+
+    // 디렉토리 내용 확인
     exec(`ls -la "${projectDir}"`, (error, stdout, stderr) => {
       if (error) {
         console.error('디렉토리 확인 실패:', error);
@@ -68,20 +83,45 @@ app.post('/webhook', (req, res) => {
         console.log('디렉토리 내용:', stdout);
       }
     });
-    
-    // 업데이트 및 재배포 명령어 실행
-    const command = `cd "${projectDir}" && git config --global user.email "${process.env.GIT_USER_EMAIL}" && git config --global user.name "${process.env.GIT_USER_NAME}" && git stash && git pull origin main && git stash pop && ${dockerComposePath} down && ${dockerComposePath} up --build`;
-    
-    console.log("실행할 명령어:", command);
 
-    exec(command, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`❌ 업데이트 실패:`, error);
-        console.error(`stderr: ${stderr}`);
-      } else {
-        console.log("✅ 업데이트 완료:\n", stdout);
+    // 명령어를 개별적으로 실행
+    const commands = [
+      `cd "${projectDir}"`,
+      `git config --global user.email "${process.env.GIT_USER_EMAIL}"`,
+      `git config --global user.name "${process.env.GIT_USER_NAME}"`,
+      'git stash',
+      'git pull origin main',
+      'git stash pop',
+      `${dockerComposePath} down`,
+      `${dockerComposePath} up --build`
+    ];
+
+    // 각 명령어를 순차적으로 실행
+    let currentCommand = 0;
+    const executeNextCommand = () => {
+      if (currentCommand >= commands.length) {
+        console.log('✅ 모든 명령어 실행 완료!');
+        return;
       }
-    });
+
+      const command = commands[currentCommand];
+      console.log(`실행 중인 명령어 (${currentCommand + 1}/${commands.length}):`, command);
+
+      exec(command, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`❌ 명령어 실행 실패:`, command);
+          console.error('오류:', error);
+          console.error('stderr:', stderr);
+        } else {
+          console.log(`✅ 명령어 실행 성공:`, command);
+          if (stdout) console.log('출력:', stdout);
+        }
+        currentCommand++;
+        executeNextCommand();
+      });
+    };
+
+    executeNextCommand();
   }
 
   res.sendStatus(200);
