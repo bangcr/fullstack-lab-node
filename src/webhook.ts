@@ -93,13 +93,16 @@ app.post('/webhook', (req, res) => {
       'git pull origin main',
       'git stash pop || true',  // 실패해도 계속 진행
       `${dockerComposePath} down --remove-orphans`,
-      // 컨테이너가 완전히 종료되었는지 확인
-      `${dockerComposePath} ps --services | wc -l | grep -q "^0$" || (echo "컨테이너가 아직 실행 중입니다." && exit 1)`,
+      // 컨테이너가 완전히 종료되었는지 확인 (최대 3번 시도)
+      `sleep 10 && ${dockerComposePath} ps --services | wc -l | grep -q "^0$" || (echo "컨테이너가 아직 실행 중입니다." && exit 1)`,
       `${dockerComposePath} up --build`
     ];
 
     // 각 명령어를 순차적으로 실행
     let currentCommand = 0;
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
+
     const executeNextCommand = () => {
       if (currentCommand >= commands.length) {
         console.log('✅ 모든 명령어 실행 완료!');
@@ -114,17 +117,25 @@ app.post('/webhook', (req, res) => {
           console.error(`❌ 명령어 실행 실패:`, command);
           console.error('오류:', error);
           console.error('stderr:', stderr);
-          // docker-compose ps 명령어가 실패하면 3초 후에 재시도
+          
+          // docker-compose ps 명령어가 실패하면 최대 3번까지 재시도
           if (command.includes('docker-compose ps')) {
-            console.log('컨테이너 상태 확인 재시도 중...');
-            setTimeout(() => {
-              executeNextCommand();
-            }, 3000);
-            return;
+            if (retryCount < MAX_RETRIES) {
+              retryCount++;
+              console.log(`컨테이너 상태 확인 재시도 중... (${retryCount}/${MAX_RETRIES})`);
+              setTimeout(() => {
+                executeNextCommand();
+              }, 10000); // 10초 대기 후 재시도
+              return;
+            } else {
+              console.error('❌ 최대 재시도 횟수 초과. 컨테이너 상태 확인 실패');
+              return;
+            }
           }
         } else {
           console.log(`✅ 명령어 실행 성공:`, command);
           if (stdout) console.log('출력:', stdout);
+          retryCount = 0; // 성공 시 재시도 카운트 초기화
         }
         
         currentCommand++;
