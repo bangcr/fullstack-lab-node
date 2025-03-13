@@ -11,6 +11,23 @@ dotenv.config({ path: resolve(__dirname, '../.env') });
 const app = express();
 const port = 9000;
 
+// 명령어 실행 함수
+const executeCommand = (command: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`명령어 실행 실패: ${command}`);
+        console.error(`오류: ${error.message}`);
+        if (stderr) console.error(`표준 에러: ${stderr}`);
+        reject(error);
+      } else {
+        if (stdout) console.log(`실행 결과: ${stdout}`);
+        resolve(stdout);
+      }
+    });
+  });
+};
+
 // 환경변수가 없을 경우 에러 발생
 if (!process.env.PROJECT_DIR) {
   console.error('❌ PROJECT_DIR 환경변수가 설정되지 않았습니다!');
@@ -32,11 +49,8 @@ try {
   console.error('디렉토리 확인 중 에러:', err);
 }
 
-// GitHub Webhook Secret (보안을 위해 환경변수로 관리하는 것을 권장)
+// GitHub Webhook Secret
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'your-webhook-secret';
-
-// 환경변수 확인용 로그
-console.log('프로젝트 디렉토리:', process.env.PROJECT_DIR);
 
 // JSON body 파싱
 app.use(express.json());
@@ -47,43 +61,64 @@ app.get('/webhook/health', (req, res) => {
 });
 
 // Webhook 엔드포인트
-app.post('/webhook', (req, res) => {
+app.post('/webhook', async (req, res) => {
   console.log("🔹 GitHub Webhook 수신:", new Date().toISOString());
 
   // Push 이벤트인지 확인
   if (req.body.ref === "refs/heads/main") {
     console.log("🚀 main 브랜치 변경 감지! 업데이트 진행...");
 
-    // Docker Compose 실행 파일 경로
-    const dockerComposePath = process.platform === 'win32' 
-      ? 'docker-compose.exe'  // Windows
-      : '/usr/local/bin/docker-compose';  // Linux/Mac
+    try {
+      const projectDir = process.env.PROJECT_DIR;
+      const dockerComposePath = process.platform === 'win32' 
+        ? 'docker-compose.exe'
+        : '/usr/local/bin/docker-compose';
 
-    // 프로젝트 디렉토리 (호스트 시스템의 경로)
-    const projectDir = process.env.PROJECT_DIR;
-    
-    // 디버깅: 명령어 실행 전 디렉토리 확인
-    exec(`ls -la "${projectDir}"`, (error, stdout, stderr) => {
-      if (error) {
-        console.error('디렉토리 확인 실패:', error);
-      } else {
-        console.log('디렉토리 내용:', stdout);
-      }
-    });
-    
-    // 업데이트 및 재배포 명령어 실행
-    const command = `cd "${projectDir}" && git config --global user.email "${process.env.GIT_USER_EMAIL}" && git config --global user.name "${process.env.GIT_USER_NAME}" && git stash && git pull origin main && git stash pop && "${dockerComposePath}" down && "${dockerComposePath}" up --build`;
-    
-    console.log("실행할 명령어:", command);
+      // 디렉토리 내용 확인
+      console.log('현재 디렉토리 내용 확인:');
+      await executeCommand(`ls -la "${projectDir}"`);
 
-    exec(command, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`❌ 업데이트 실패:`, error);
-        console.error(`stderr: ${stderr}`);
-      } else {
-        console.log("✅ 업데이트 완료:\n", stdout);
+      // Git 저장소 상태 확인 및 초기화
+      console.log('1. Git 저장소 상태 확인 중...');
+      try {
+        await executeCommand(`cd "${projectDir}" && git status`);
+      } catch (error) {
+        console.log('Git 저장소 초기화 중...');
+        await executeCommand(`cd "${projectDir}" && git init`);
+        await executeCommand(`cd "${projectDir}" && git remote add origin https://github.com/bangcr/fullstack-lab-node.git`);
       }
-    });
+
+      // Git 설정
+      console.log('2. Git 설정 중...');
+      await executeCommand(`cd "${projectDir}" && git config --global user.email "${process.env.GIT_USER_EMAIL}"`);
+      await executeCommand(`cd "${projectDir}" && git config --global user.name "${process.env.GIT_USER_NAME}"`);
+
+      // 현재 변경사항 저장
+      console.log('3. 현재 변경사항 저장 중...');
+      await executeCommand(`cd "${projectDir}" && git add .`);
+      await executeCommand(`cd "${projectDir}" && git stash`);
+
+      // 원격 저장소에서 변경사항 가져오기
+      console.log('4. 원격 저장소에서 변경사항 가져오는 중...');
+      await executeCommand(`cd "${projectDir}" && git fetch origin`);
+      await executeCommand(`cd "${projectDir}" && git reset --hard origin/main`);
+
+      // 저장했던 변경사항 복원
+      console.log('5. 저장했던 변경사항 복원 중...');
+      await executeCommand(`cd "${projectDir}" && git stash pop`);
+
+      // Docker 컨테이너 중지
+      console.log('6. Docker 컨테이너 중지 중...');
+      await executeCommand(`cd "${projectDir}" && "${dockerComposePath}" down`);
+
+      // Docker 컨테이너 재시작
+      console.log('7. Docker 컨테이너 재시작 중...');
+      await executeCommand(`cd "${projectDir}" && "${dockerComposePath}" up -d --build`);
+
+      console.log('✅ 업데이트 및 재배포 완료!');
+    } catch (error) {
+      console.error('❌ 업데이트 실패:', error);
+    }
   }
 
   res.sendStatus(200);
