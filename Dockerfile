@@ -27,6 +27,9 @@ RUN echo \
 # Docker CLI 및 docker-compose 설치
 RUN apt-get update && apt-get install -y docker-ce-cli docker-compose-plugin
 
+# docker-compose 명령어를 사용할 수 있도록 심볼릭 링크 생성
+RUN ln -s /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
+
 # package.json과 package-lock.json (또는 yarn.lock) 파일을 복사
 # 종속성 설치를 위해 필요한 파일만 먼저 복사
 COPY package*.json ./
