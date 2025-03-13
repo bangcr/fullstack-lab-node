@@ -91,7 +91,7 @@ app.post('/webhook', (req, res) => {
       `git config --global user.name "${process.env.GIT_USER_NAME}"`,
       'git stash',
       'git pull origin main',
-      'git stash pop',
+      'git stash pop || true',  // 실패해도 계속 진행
       `${dockerComposePath} down`,
       `${dockerComposePath} up --build`
     ];
