@@ -93,6 +93,8 @@ app.post('/webhook', (req, res) => {
       'git pull origin main',
       'git stash pop || true',  // 실패해도 계속 진행
       `${dockerComposePath} down`,
+      // 컨테이너가 완전히 종료되었는지 확인
+      `${dockerComposePath} ps --format json | grep -q "[]" || (echo "컨테이너가 아직 실행 중입니다." && exit 1)`,
       `${dockerComposePath} up --build`
     ];
 
@@ -112,21 +114,21 @@ app.post('/webhook', (req, res) => {
           console.error(`❌ 명령어 실행 실패:`, command);
           console.error('오류:', error);
           console.error('stderr:', stderr);
+          // docker-compose ps 명령어가 실패하면 3초 후에 재시도
+          if (command.includes('docker-compose ps')) {
+            console.log('컨테이너 상태 확인 재시도 중...');
+            setTimeout(() => {
+              executeNextCommand();
+            }, 3000);
+            return;
+          }
         } else {
           console.log(`✅ 명령어 실행 성공:`, command);
           if (stdout) console.log('출력:', stdout);
         }
         
-        // docker-compose 명령어인 경우 추가 대기 시간 설정
-        if (command.includes('docker-compose')) {
-          setTimeout(() => {
-            currentCommand++;
-            executeNextCommand();
-          }, 5000); // 5초 대기
-        } else {
-          currentCommand++;
-          executeNextCommand();
-        }
+        currentCommand++;
+        executeNextCommand();
       });
     };
 
