@@ -71,10 +71,12 @@ services:
       - ./.env:/app/.env:ro
       - ${PROJECT_DIR}:${PROJECT_DIR}
     environment:
-      - WEBHOOK_SECRET=your-webhook-secret
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET}
       - PROJECT_DIR=${PROJECT_DIR}
       - GIT_USER_EMAIL=${GIT_USER_EMAIL}
       - GIT_USER_NAME=${GIT_USER_NAME}
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    privileged: true  # Docker 컨테이너 제어를 위한 권한 추가
     restart: always
     networks:
       - mynetwork
