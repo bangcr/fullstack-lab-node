@@ -3,7 +3,6 @@ services:
   # MySQL 데이터베이스 서비스
   db:
     image: mysql:8.0 # MySQL 8.0 버전 이미지 사용
-    auto_remove: true
     environment: # MySQL 환경 변수 설정
       MYSQL_ROOT_PASSWORD: rootpassword # root 사용자의 비밀번호
       MYSQL_DATABASE: mydb # 생성할 기본 데이터베이스 이름
