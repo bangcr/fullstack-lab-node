@@ -93,8 +93,7 @@ app.post('/webhook', (req, res) => {
       'git pull origin main',
       'git stash pop || true',  // 실패해도 계속 진행
       `${dockerComposePath} stop backend db phpmyadmin nginx && ${dockerComposePath} rm -f backend db phpmyadmin nginx`,  // webhook 서비스 제외
-      'sleep 15',  // 15초 대기 (포트 해제를 위해 시간 증가)
-      'while netstat -an | grep -q ":3306 "; do echo "Waiting for port 3306 to be released..."; sleep 2; done',  // 3306 포트가 해제될 때까지 대기
+      'sleep 10',  // 10초 대기
       `${dockerComposePath} up -d --build backend db phpmyadmin nginx`  // webhook 서비스 명시적 제외
     ];
 
