@@ -92,7 +92,7 @@ app.post('/webhook', (req, res) => {
       'git stash',
       'git pull origin main',
       'git stash pop || true',  // 실패해도 계속 진행
-      `${dockerComposePath} stop backend db phpmyadmin nginx && ${dockerComposePath} rm -f backend db phpmyadmin nginx`,  // webhook 서비스 제외
+      `${dockerComposePath} rm -f backend db phpmyadmin nginx`,  // stop 없이 rm만 실행
       'sleep 10',  // 10초 대기
       `${dockerComposePath} up -d --build backend db phpmyadmin nginx`  // webhook 서비스 명시적 제외
     ];
